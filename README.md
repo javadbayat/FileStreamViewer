@@ -1,2 +1,8 @@
 # FileStreamViewer
-A simple utility used to view the NTFS alternate data streams within files and directories
+A simple utility used to view the **NTFS alternate data streams** (see [here](https://learn.microsoft.com/en-us/windows/win32/fileio/file-streams) and [here](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/c54dec26-1551-4d3a-a0ea-4fa40f848eb3) and [here](https://stackoverflow.com/q/1809725/8492420)) within files and directories. It is similar to the [Sysinternals `streams` utility](https://learn.microsoft.com/en-us/sysinternals/downloads/streams), except that it has a GUI.
+
+After starting the app, it will show two buttons you can use **to select a file** and **to select a directory**. By selecting a file, the app will show a table listing any streams it encounters within that file, along with **their sizes and types**. Similarly, by selecting a directory, the app will show a series of stream tables, one for **the directory itself**, and one for **each file located within the directory**.
+
+The file `FileStreamViewer.hta` is the main file that must be opened to start the application. It is accompanied by a DLL file named `StreamsEnumerator.dll`, which you obtain by building the C++ source code in this repository.
+
+This application is based on the **Active Station** technology. Therefore, to compile the source code of `StreamsEnumerator.dll`, it is required that the static library files `libstation.x86.lib` and `libstation.x64.lib` be present in the project directory. To obtain these files, head to [the ActiveStation repository](https://github.com/javadbayat/ActiveStation), and compile the static library's source code from that repository.
