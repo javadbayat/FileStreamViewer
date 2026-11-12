@@ -1,0 +1,170 @@
+﻿<html>
+<head>
+    <title>File Stream Viewer</title>
+    <hta:application id="app" applicationname="File Stream Viewer" version="1.0" windowstate="maximize" contextmenu="no" />
+
+    <meta name="author" content="Javad Bayat">
+    <meta http-equiv="content-type" content="text/html; charset = UTF-8">
+    <meta http-equiv="MSThemeCompatible" content="Yes">
+
+    <style type="text/css">
+        body {
+            font-family: verdana;
+        }
+
+        #divActionsPanel button {
+            margin: 7px;
+        }
+
+        .clsExpandCollapse {
+            cursor: hand;
+        }
+
+        .clsStreams {
+            border-collapse: collapse;
+        }
+
+            .clsStreams th, td {
+                text-align: center;
+                vertical-align: middle;
+            }
+    </style>
+
+    <script src="station.js" type="text/jscript"></script>
+
+    <script language="jscript">
+        var EnumFileStreams = LoadStation("StreamsEnumerator.dll");
+        var shell = new ActiveXObject("Shell.Application");
+        var outputEntryPrototype = null;
+
+        Number.prototype.toFileSize = function () {
+            var divideby;
+            var tagg;
+            if (this / 1024 < 1) {
+                divideby = 1;
+                tagg = "bytes";
+            }
+            else if (this / (1024 * 1024) < 1) {
+                divideby = 1024;
+                tagg = "KB";
+            }
+            else if (this / (1024 * 1024 * 1024) < 1) {
+                divideby = 1024 * 1024;
+                tagg = "MB";
+            }
+            else if (this / (1024 * 1024 * 1024 * 1024) < 1) {
+                divideby = 1024 * 1024 * 1024;
+                tagg = "GB";
+            }
+            var i = this / divideby;
+            var x = Number(Math.floor(i * 100) / 100);
+            return ((divideby == 1) ? x : x.toFixed(2)) + " " + tagg;
+        };
+
+        onload = function () {
+            btnSelectFile.style.width = btnSelectFolder.offsetWidth;
+
+            outputEntryPrototype = divOutputEntry.removeNode(true);
+
+            btnSelectFile.onclick = function () {
+                var fileName = objDialogHelper.openfiledlgex("", "", "All Files|*.*|", 0, "");
+                if (!fileName)
+                    return;
+
+                fileName = fileName.substr(0, fileName.indexOf("\0"));
+
+                clearElement(divOutput);
+                dumpStreams(fileName);
+            };
+
+            btnSelectFolder.onclick = function () {
+                var folder = shell.BrowseForFolder(0, "Please select a folder to view its streams.", 595);
+                if (!folder)
+                    return;
+
+                var folderName = folder.Self.Path;
+
+                clearElement(divOutput);
+                dumpStreams(folderName);
+
+                folder = fso.GetFolder(folderName);
+                for (var e = new Enumerator(folder.Files) ; !e.atEnd() ; e.moveNext())
+                    dumpStreams(e.item().Path);
+            };
+        };
+
+        function newOutputEntry() {
+            var outputEntry = outputEntryPrototype.cloneNode(true);
+
+            var btnExpandCollapse = outputEntry.firstChild.firstChild;
+            btnExpandCollapse.onclick = function () {
+                var tblStreamsInfo = this.parentNode.nextSibling;
+                if (tblStreamsInfo.style.display == "none") {
+                    tblStreamsInfo.style.display = "";
+                    this.src = "minus.png";
+                }
+                else {
+                    tblStreamsInfo.style.display = "none";
+                    this.src = "plus.png";
+                }
+            };
+
+            return divOutput.appendChild(outputEntry);
+        }
+
+        function clearElement(elem) {
+            elem.innerText = "";
+        }
+
+        function dumpStreams(path) {
+            var outputEntry = newOutputEntry();
+
+            var span = outputEntry.firstChild.children[1];
+            span.innerText = fso.GetFileName(path);
+            span.title = path;
+
+            var i = 0;
+            var tblStreams = outputEntry.lastChild;
+            EnumFileStreams(path, function (streamName, streamSize) {
+                var c = streamName.lastIndexOf(":");
+                var streamType = streamName.substr(c + 1);
+                streamName = streamName.substring(1, c);
+
+                var row = tblStreams.insertRow();
+                row.insertCell().innerText = i++;
+                row.insertCell().innerText = streamName;
+                row.insertCell().innerText = streamSize.toFileSize();
+                row.insertCell().innerText = streamType;
+
+                return true;
+            });
+        }
+    </script>
+</head>
+<body scroll="auto">
+    <div id="divActionsPanel">
+        <button id="btnSelectFile">Select File</button>
+        <button id="btnSelectFolder">Select Folder</button>
+    </div>
+
+    <div id="divOutput">
+        <div id="divOutputEntry">
+            <p>
+                <img class="clsExpandCollapse" src="minus.png" width="20" height="20" valign="middle" hspace="1" alt="Expand / Collapse">
+                <span title="File/Directory Path">File/Directory Name</span>
+            </p>
+            <table class="clsStreams" border="1" bordercolor="black" cellpadding="7">
+                <caption>Streams</caption>
+                <tr>
+                    <th>No</th>
+                    <th>Name</th>
+                    <th>Size</th>
+                    <th>Type</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <object id="objDialogHelper" classid="CLSID:3050f4e1-98b5-11cf-bb82-00aa00bdce0b" height="0" width="0"></object>
+</body>
+</html>
